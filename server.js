@@ -1,11 +1,15 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const { Pool } = require('pg');
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 
 // 创建一个 Express 应用
 const app = express();
 // 定义服务器要监听的端口
 const port = 8989;
+
+
 
 // 使用 body-parser 中间件解析 JSON 请求体
 app.use(bodyParser.json());
@@ -38,8 +42,35 @@ async function initDb() {
 
 initDb().catch(console.error);
 
-// 路由：获取所有 TODO
-app.get('/todos', async (req, res) => {
+// Swagger 配置
+const swaggerOptions = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'Todo List API',
+            version: '1.0.0',
+            description: 'A simple Todo List API',
+        },
+    },
+    apis: ['./server.js'], // 修改为 server.js
+};
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+/**
+ * @swagger
+ * /api/todos:
+ *   get:
+ *     summary: 获取所有 TODO
+ *     description: 返回所有存储在数据库中的 TODO 项
+ *     responses:
+ *       200:
+ *         description: 成功返回 TODO 列表
+ *       500:
+ *         description: 服务器错误
+ */
+app.get('/api/todos', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM todos');
         res.json(result.rows);
@@ -49,8 +80,28 @@ app.get('/todos', async (req, res) => {
     }
 });
 
-// 路由：获取特定 TODO
-app.get('/todos/:id', async (req, res) => {
+/**
+ * @swagger
+ * /api/todos/{id}:
+ *   get:
+ *     summary: 获取特定 TODO
+ *     description: 根据ID返回特定的 TODO 项
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: TODO 项的ID
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: 成功返回 TODO 项
+ *       404:
+ *         description: TODO 项未找到
+ *       500:
+ *         description: 服务器错误
+ */
+app.get('/api/todos/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const result = await pool.query('SELECT * FROM todos WHERE id = $1', [id]);
@@ -65,8 +116,34 @@ app.get('/todos/:id', async (req, res) => {
     }
 });
 
-// 路由：创建一个新的 TODO
-app.post('/todos', async (req, res) => {
+/**
+ * @swagger
+ * /api/todos:
+ *   post:
+ *     summary: 创建一个新的 TODO
+ *     description: 创建并存储一个新的 TODO 项
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: 成功创建 TODO 项
+ *       400:
+ *         description: 请求参数错误
+ *       500:
+ *         description: 服务器错误
+ */
+app.post('/api/todos', async (req, res) => {
     try {
         const { title, description } = req.body;
         if (!title) {
@@ -83,8 +160,28 @@ app.post('/todos', async (req, res) => {
     }
 });
 
-// 路由：删除 TODO
-app.delete('/todos/:id', async (req, res) => {
+/**
+ * @swagger
+ * /api/todos/{id}:
+ *   delete:
+ *     summary: 删除 TODO
+ *     description: 根据ID删除特定的 TODO 项
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: 要删除的 TODO 项的ID
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       204:
+ *         description: 成功删除 TODO 项
+ *       404:
+ *         description: TODO 项未找到
+ *       500:
+ *         description: 服务器错误
+ */
+app.delete('/api/todos/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const result = await pool.query('DELETE FROM todos WHERE id = $1 RETURNING *', [id]);
@@ -101,5 +198,6 @@ app.delete('/todos/:id', async (req, res) => {
 
 // 启动服务器
 app.listen(port, () => {
-    console.log(`Example app listening at http://localhost:${port}`);
+    console.log(`Example app listening at http://localhost:${port} 入口 `);
+    console.log(`Swagger UI available at http://localhost:${port}/api-docs`);
 });
