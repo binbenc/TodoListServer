@@ -79,7 +79,7 @@ app.get('/api/todos', async (req, res) => {
         res.json(result.rows);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: "Internal server error", error: err.message });
     }
 });
 
