@@ -17,7 +17,7 @@ app.use(bodyParser.json());
 // 创建数据库连接池
 const pool = new Pool({
     user: 'chen',
-    host: 'localhost',
+    host: '0.0.0.0', // localhost 本地运行 0.0.0.0 服务器运行
     database: 'todo_db',
     password: 'chen',
     port: 5432,
@@ -35,6 +35,9 @@ async function initDb() {
                 completed BOOLEAN DEFAULT FALSE
             )
         `);
+        console.log('Database connection successful');
+    } catch (err) {
+        console.error('Database connection error:', err);
     } finally {
         client.release();
     }
