@@ -202,6 +202,29 @@ app.delete('/api/todos/:id', async (req, res) => {
     }
 });
 
+
+/**
+ * @swagger
+ * /api/todos:
+ *   delete:
+ *     summary: 清除所有 TODO
+ *     description: 删除所有 TODO 项
+ *     responses:
+ *       204:
+ *         description: 成功清除所有 TODO 项
+ *       500:
+ *         description: 服务器错误
+ */
+app.delete('/api/todos', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM todos');
+        res.status(204).send();
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 // 启动服务器
 app.listen(port, () => {
     console.log(`Example app listening at http://localhost:${port} 入口 `);
