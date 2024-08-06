@@ -21,6 +21,9 @@ const pool = new Pool({
     database: 'todo_db',
     password: 'chen',
     port: 5432,
+    max: 50, // 设置连接池的最大连接数
+    idleTimeoutMillis: 30000, // 空闲连接回收时间
+    connectionTimeoutMillis: 2000, // 连接超时设置
 });
 
 // 初始化数据库表
