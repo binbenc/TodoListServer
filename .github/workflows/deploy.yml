@@ -1,0 +1,41 @@
+name: Deploy Node.js App
+
+on:
+  push:
+    branches:
+      - deploy  # 监听主分支的 push 事件。如果你的主分支有不同的名称，请修改此处
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  # 使用最新的 Ubuntu 环境
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'  # 替换为你项目中使用的 Node.js 版本
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test  # 如果你没有测试步骤，可以删除这一行
+
+      - name: Deploy server.js
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}  # 确保在 GitHub Secrets 中添加了 SSH_PRIVATE_KEY
+          HOST: ${{ secrets.HOST }}  # 确保在 GitHub Secrets 中添加了 HOST
+          USER: ${{ secrets.HOST_USER }}  # 确保在 GitHub Secrets 中添加了 HOST_USER
+          PATH: ${{ secrets.HOST_SERVER_PATH }} # 确保在 GitHub Secrets 中添加了 HOST_SERVER_PATH
+        run: |
+          # 将 server.js 文件上传到服务器
+          scp -i $SSH_PRIVATE_KEY ./server.js $USER@$HOST:$PATH
+
+          # 连接到服务器并重启应用
+          ssh -i $SSH_PRIVATE_KEY -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
+            cd $PATH
+            pm2 restart server  # 如果你使用了 PM2 进行进程管理，并且你的应用名称为 server
+          EOF
