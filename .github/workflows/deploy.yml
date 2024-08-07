@@ -21,9 +21,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # 安装 openssh-client 以确保 scp 可用
+      # 使用 sudo 安装 openssh-client 以确保 scp 可用
       - name: Install openssh-client
-        run: apt-get update && apt-get install -y openssh-client
+        run: sudo apt-get update && sudo apt-get install -y openssh-client
 
       # - name: Run tests
       #   run: npm test  # 如果你没有测试步骤，可以删除这一行
