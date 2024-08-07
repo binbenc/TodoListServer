@@ -21,25 +21,23 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # 使用 sudo 安装 openssh-client 以确保 scp 可用
-      - name: Install openssh-client
-        run: sudo apt-get update && sudo apt-get install -y openssh-client
+      # 使用 scp-action 将 server.js 文件上传到服务器
+      - name: Upload server.js to server
+        uses: appleboy/scp-action@v0.1.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.HOST_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: './server.js'
+          target: '${{ secrets.HOST_SERVER_PATH }}'
 
-      # - name: Run tests
-      #   run: npm test  # 如果你没有测试步骤，可以删除这一行
-
-      - name: Deploy server.js
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }} # 确保在 GitHub Secrets 中添加了 SSH_PRIVATE_KEY
-          HOST: ${{ secrets.HOST }} # 确保在 GitHub Secrets 中添加了 HOST
-          USER: ${{ secrets.HOST_USER }} # 确保在 GitHub Secrets 中添加了 HOST_USER
-          PATH: ${{ secrets.HOST_SERVER_PATH }} # 确保在 GitHub Secrets 中添加了 HOST_SERVER_PATH
-        run: |
-          # 将 server.js 文件上传到服务器
-          scp -i $SSH_PRIVATE_KEY ./server.js $USER@$HOST:$PATH
-
-          # 连接到服务器并重启应用
-          ssh -i $SSH_PRIVATE_KEY -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
-            cd $PATH
+      # 使用 ssh-action 连接到服务器并重启应用
+      - name: Restart server on remote host
+        uses: appleboy/ssh-action@v0.1.2
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.HOST_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.HOST_SERVER_PATH }}
             pm2 restart server  # 如果你使用了 PM2 进行进程管理，并且你的应用名称为 server
-          EOF
